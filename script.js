@@ -37,29 +37,38 @@ let selectedBodyColor = "#b83b35";
 let selectedHornColor = "#b83b35";
 
 // Load an image
+const imageCache = new Map();
+
 function loadImage(path) {
-    return new Promise((resolve, reject) => {
+
+    if (imageCache.has(path)) {
+        return imageCache.get(path);
+    }
+
+    const promise = new Promise((resolve, reject) => {
+
         const image = new Image();
 
         image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error("Could not load " + path));
+
+        image.onerror = () =>
+            reject(new Error("Could not load " + path));
 
         image.src = path;
     });
+
+    imageCache.set(path, promise);
+
+    return promise;
 }
 
+let renderVersion = 0;
 
 async function drawCharacter() {
 
+    const thisRender = ++renderVersion;
+
     try {
-
-        ctx.clearRect(
-            0,
-            0,
-            canvas.width,
-            canvas.height
-        );
-
         const backgroundImage =
             await loadImage(backgrounds[selectedBackground]);
 
@@ -72,11 +81,19 @@ async function drawCharacter() {
         const hornsImage =
             await loadImage(horns[selectedHorns]);
 
+        // If another draw started while these were loading,
+        // abandon this outdated draw.
+        if (thisRender !== renderVersion) {
+            return;
+        }
+
         const coloredBody =
             recolorImage(bodyImage, selectedBodyColor);
 
         const coloredHorns =
             recolorImage(hornsImage, selectedHornColor);
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         ctx.drawImage(backgroundImage, 0, 0);
         ctx.drawImage(coloredBody, 0, 0);
@@ -84,12 +101,7 @@ async function drawCharacter() {
         ctx.drawImage(coloredHorns, 0, 0);
 
     } catch (error) {
-
-        console.error(
-            "Could not draw character:",
-            error
-        );
-
+        console.error("Could not draw character:", error);
     }
 }
 
@@ -212,6 +224,17 @@ hornColorPicker.addEventListener("input", () => {
 
 drawCharacter();
 
+function randomColor() {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+
+    return "#" +
+        r.toString(16).padStart(2, "0") +
+        g.toString(16).padStart(2, "0") +
+        b.toString(16).padStart(2, "0");
+}
+
 document
     .getElementById("randomizeButton")
     .addEventListener("click", randomizeCharacter);
@@ -219,6 +242,7 @@ document
 
 function randomizeCharacter() {
 
+    // Randomize character parts
     selectedBackground =
         Math.floor(Math.random() * backgrounds.length);
 
@@ -231,8 +255,22 @@ function randomizeCharacter() {
     selectedHorns =
         Math.floor(Math.random() * horns.length);
 
+
+    // Randomize colors
+    selectedBodyColor = randomColor();
+    selectedHornColor = randomColor();
+
+
+    // Update the visible color pickers
+    bodyColorPicker.value = selectedBodyColor;
+    hornColorPicker.value = selectedHornColor;
+
+
+    // Update highlighted option buttons
     updateAllSelectedButtons();
 
+
+    // Redraw character
     drawCharacter();
 }
 
