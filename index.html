@@ -2,46 +2,49 @@
 <html>
 
 <head>
-    <title>My Website</title>
+    <title>KoboldlyGo Character Creator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header>
-        <h1>My Website</h1>
+    <h1>Character Creator</h1>
 
-        <nav>
-            <a href="#">Home</a>
-            <a href="#">Games</a>
-            <a href="#">Graphic Novel</a>
-            <a href="#">About</a>
-        </nav>
-    </header>
+    <div class="creator">
 
-    <main>
+        <canvas
+            id="characterCanvas"
+            width="200"
+            height="200">
+        </canvas>
 
-        <section>
-            <h2>Welcome!</h2>
+        <div class="controls">
 
-            <p>
-                Welcome to my little corner of the internet.
-                Here you can find my games, art, and other projects.
-            </p>
-        </section>
+            <h2>Background</h2>
 
-        <section>
-            <h2>Character Creator</h2>
+            <button onclick="changeBackground(-1)">Previous</button>
+            <button onclick="changeBackground(1)">Next</button>
 
-            <p>
-                Create your own character using my collection
-                of hairstyles, outfits, accessories, and more.
-            </p>
+            <h2>Body</h2>
 
-            <button>Try the Character Creator</button>
-        </section>
+            <button onclick="changeBody(-1)">Previous</button>
+            <button onclick="changeBody(1)">Next</button>
 
-    </main>
+            <h2>Face</h2>
+
+            <button onclick="changeFace(-1)">Previous</button>
+            <button onclick="changeFace(1)">Next</button>
+
+            <h2>Horns</h2>
+
+            <button onclick="changeHorns(-1)">Previous</button>
+            <button onclick="changeHorns(1)">Next</button>
+
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
 
 </body>
 
