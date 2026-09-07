@@ -12,33 +12,34 @@
 
     <div class="creator">
 
-        <canvas
-            id="characterCanvas"
-            width="200"
-            height="200">
-        </canvas>
+        <div class="preview-panel">
+
+            <canvas
+                id="characterCanvas"
+                width="200"
+                height="200">
+            </canvas>
+
+            <div class="action-buttons">
+                <button id="randomizeButton">Randomize</button>
+                <button id="clearButton">Clear</button>
+            </div>
+
+        </div>
 
         <div class="controls">
 
             <h2>Background</h2>
-
-            <button onclick="changeBackground(-1)">Previous</button>
-            <button onclick="changeBackground(1)">Next</button>
+            <div id="backgroundOptions" class="option-grid"></div>
 
             <h2>Body</h2>
-
-            <button onclick="changeBody(-1)">Previous</button>
-            <button onclick="changeBody(1)">Next</button>
+            <div id="bodyOptions" class="option-grid"></div>
 
             <h2>Face</h2>
-
-            <button onclick="changeFace(-1)">Previous</button>
-            <button onclick="changeFace(1)">Next</button>
+            <div id="faceOptions" class="option-grid"></div>
 
             <h2>Horns</h2>
-
-            <button onclick="changeHorns(-1)">Previous</button>
-            <button onclick="changeHorns(1)">Next</button>
+            <div id="hornOptions" class="option-grid"></div>
 
         </div>
 

@@ -66,64 +66,172 @@ async function drawCharacter() {
 }
 
 
-// Draw the initial character
+
+function createOptionMenu(
+    containerId,
+    options,
+    selectFunction,
+    getSelectedIndex
+) {
+
+    const container = document.getElementById(containerId);
+
+    options.forEach((imagePath, index) => {
+
+        const button = document.createElement("button");
+        button.classList.add("option-button");
+
+        const image = document.createElement("img");
+        image.src = imagePath;
+
+        button.appendChild(image);
+
+        button.addEventListener("click", () => {
+
+            selectFunction(index);
+
+            updateSelectedButtons(
+                containerId,
+                getSelectedIndex()
+            );
+        });
+
+        container.appendChild(button);
+    });
+
+    // Highlight the initially selected option
+    updateSelectedButtons(
+        containerId,
+        getSelectedIndex()
+    );
+}
+
+function updateSelectedButtons(containerId, selectedIndex) {
+
+    const container = document.getElementById(containerId);
+    const buttons = container.querySelectorAll(".option-button");
+
+    buttons.forEach((button, index) => {
+
+        if (index === selectedIndex) {
+            button.classList.add("selected");
+        } else {
+            button.classList.remove("selected");
+        }
+
+    });
+}
+
+function selectBackground(index) {
+    selectedBackground = index;
+    drawCharacter();
+}
+
+function selectBody(index) {
+    selectedBody = index;
+    drawCharacter();
+}
+
+function selectFace(index) {
+    selectedFace = index;
+    drawCharacter();
+}
+
+function selectHorns(index) {
+    selectedHorns = index;
+    drawCharacter();
+}
+
+createOptionMenu(
+    "backgroundOptions",
+    backgrounds,
+    selectBackground,
+    () => selectedBackground
+);
+
+createOptionMenu(
+    "bodyOptions",
+    bodies,
+    selectBody,
+    () => selectedBody
+);
+
+createOptionMenu(
+    "faceOptions",
+    faces,
+    selectFace,
+    () => selectedFace
+);
+
+createOptionMenu(
+    "hornOptions",
+    horns,
+    selectHorns,
+    () => selectedHorns
+);
+
 drawCharacter();
 
-function changeBackground(direction) {
-    selectedBackground += direction;
-
-    if (selectedBackground < 0) {
-        selectedBackground = backgrounds.length - 1;
-    }
-
-    if (selectedBackground >= backgrounds.length) {
-        selectedBackground = 0;
-    }
-
-    drawCharacter();
-}
+document
+    .getElementById("randomizeButton")
+    .addEventListener("click", randomizeCharacter);
 
 
-function changeBody(direction) {
-    selectedBody += direction;
+function randomizeCharacter() {
 
-    if (selectedBody < 0) {
-        selectedBody = bodies.length - 1;
-    }
+    selectedBackground =
+        Math.floor(Math.random() * backgrounds.length);
 
-    if (selectedBody >= bodies.length) {
-        selectedBody = 0;
-    }
+    selectedBody =
+        Math.floor(Math.random() * bodies.length);
+
+    selectedFace =
+        Math.floor(Math.random() * faces.length);
+
+    selectedHorns =
+        Math.floor(Math.random() * horns.length);
+
+    updateAllSelectedButtons();
 
     drawCharacter();
 }
 
+function updateAllSelectedButtons() {
 
-function changeFace(direction) {
-    selectedFace += direction;
+    updateSelectedButtons(
+        "backgroundOptions",
+        selectedBackground
+    );
 
-    if (selectedFace < 0) {
-        selectedFace = faces.length - 1;
-    }
+    updateSelectedButtons(
+        "bodyOptions",
+        selectedBody
+    );
 
-    if (selectedFace >= faces.length) {
-        selectedFace = 0;
-    }
+    updateSelectedButtons(
+        "faceOptions",
+        selectedFace
+    );
+
+    updateSelectedButtons(
+        "hornOptions",
+        selectedHorns
+    );
+}
+
+document
+    .getElementById("clearButton")
+    .addEventListener("click", clearCharacter);
+
+function clearCharacter() {
+
+    selectedBackground = 0;
+    selectedBody = 0;
+    selectedFace = 0;
+    selectedHorns = 0;
+
+    updateAllSelectedButtons();
 
     drawCharacter();
 }
 
-
-function changeHorns(direction) {
-    selectedHorns += direction;
-
-    if (selectedHorns < 0) {
-        selectedHorns = horns.length - 1;
-    }
-
-    if (selectedHorns >= horns.length) {
-        selectedHorns = 0;
-    }
-
-    drawCharacter();
-}
