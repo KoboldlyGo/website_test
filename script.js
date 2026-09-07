@@ -32,6 +32,9 @@ let selectedBody = 0;
 let selectedFace = 0;
 let selectedHorns = 0;
 
+// Current colors
+let selectedBodyColor = "#b83b35";
+let selectedHornColor = "#b83b35";
 
 // Load an image
 function loadImage(path) {
@@ -46,25 +49,49 @@ function loadImage(path) {
 }
 
 
-// Draw the character
 async function drawCharacter() {
 
-    // Clear the canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    try {
 
-    // Load all four layers
-    const backgroundImage = await loadImage(backgrounds[selectedBackground]);
-    const bodyImage = await loadImage(bodies[selectedBody]);
-    const faceImage = await loadImage(faces[selectedFace]);
-    const hornsImage = await loadImage(horns[selectedHorns]);
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
-    // Draw in order from back to front
-    ctx.drawImage(backgroundImage, 0, 0);
-    ctx.drawImage(bodyImage, 0, 0);
-    ctx.drawImage(faceImage, 0, 0);
-    ctx.drawImage(hornsImage, 0, 0);
+        const backgroundImage =
+            await loadImage(backgrounds[selectedBackground]);
+
+        const bodyImage =
+            await loadImage(bodies[selectedBody]);
+
+        const faceImage =
+            await loadImage(faces[selectedFace]);
+
+        const hornsImage =
+            await loadImage(horns[selectedHorns]);
+
+        const coloredBody =
+            recolorImage(bodyImage, selectedBodyColor);
+
+        const coloredHorns =
+            recolorImage(hornsImage, selectedHornColor);
+
+        ctx.drawImage(backgroundImage, 0, 0);
+        ctx.drawImage(coloredBody, 0, 0);
+        ctx.drawImage(faceImage, 0, 0);
+        ctx.drawImage(coloredHorns, 0, 0);
+
+    } catch (error) {
+
+        console.error(
+            "Could not draw character:",
+            error
+        );
+
+    }
 }
-
 
 
 function createOptionMenu(
@@ -170,6 +197,19 @@ createOptionMenu(
     () => selectedHorns
 );
 
+const bodyColorPicker = document.getElementById("bodyColor");
+const hornColorPicker = document.getElementById("hornColor");
+
+bodyColorPicker.addEventListener("input", () => {
+    selectedBodyColor = bodyColorPicker.value;
+    drawCharacter();
+});
+
+hornColorPicker.addEventListener("input", () => {
+    selectedHornColor = hornColorPicker.value;
+    drawCharacter();
+});
+
 drawCharacter();
 
 document
@@ -230,8 +270,66 @@ function clearCharacter() {
     selectedFace = 0;
     selectedHorns = 0;
 
-    updateAllSelectedButtons();
+    selectedBodyColor = "#b83b35";
+    selectedHornColor = "#b83b35";
 
+    bodyColorPicker.value = selectedBodyColor;
+    hornColorPicker.value = selectedHornColor;
+
+    updateAllSelectedButtons();
     drawCharacter();
+}
+
+function recolorImage(image, newColor) {
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+
+    const tempCtx = tempCanvas.getContext("2d");
+
+    tempCtx.drawImage(image, 0, 0);
+
+    const imageData = tempCtx.getImageData(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+    );
+
+    const data = imageData.data;
+
+    // Convert hex color to RGB
+    const rNew = parseInt(newColor.substring(1, 3), 16);
+    const gNew = parseInt(newColor.substring(3, 5), 16);
+    const bNew = parseInt(newColor.substring(5, 7), 16);
+
+    for (let i = 0; i < data.length; i += 4) {
+
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const a = data[i + 3];
+
+        // Ignore transparent pixels
+        if (a === 0) {
+            continue;
+        }
+
+        // Detect red-ish pixels
+        if (
+            r > 100 &&
+            r > g * 1.5 &&
+            r > b * 1.5
+        ) {
+            data[i] = rNew;
+            data[i + 1] = gNew;
+            data[i + 2] = bNew;
+        }
+    }
+
+    tempCtx.putImageData(imageData, 0, 0);
+
+    return tempCanvas;
 }
 
