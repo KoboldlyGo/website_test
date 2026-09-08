@@ -1,14 +1,17 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>KoboldlyGo Character Creator</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <h1>Character Creator</h1>
+    <h1>Kobold Kreator</h1>
 
     <div class="creator">
 
@@ -16,44 +19,123 @@
 
             <canvas
                 id="characterCanvas"
-                width="200"
-                height="200">
+                width="800"
+                height="1000">
             </canvas>
 
             <div class="action-buttons">
-                <button id="randomizeButton">Randomize</button>
-                <button id="clearButton">Clear</button>
+                <button type="button" id="randomizeButton">Randomize</button>
+                <button type="button" id="clearButton">Reset</button>
             </div>
 
         </div>
 
         <div class="controls">
 
-            <h2>Background</h2>
-            <div id="backgroundOptions" class="option-grid"></div>
+            <section class="control-section">
+                <h2>Background</h2>
+                <div id="backgroundOptions" class="option-grid"></div>
+            </section>
 
-            <h2>Body</h2>
-            <div id="bodyOptions" class="option-grid"></div>
 
-            <label for="bodyColor">Body Color:</label>
-            <input
-              type="color"
-              id="bodyColor"
-              value="#b83b35"
-            >
+            <section class="control-section">
+                <h2>Colors</h2>
 
-            <h2>Face</h2>
-            <div id="faceOptions" class="option-grid"></div>
+                <div class="color-controls">
 
-            <h2>Horns</h2>
-            <div id="hornOptions" class="option-grid"></div>
+                    <label for="primaryColor">Body Primary:</label>
+                    <input
+                        type="color"
+                        id="primaryColor"
+                        value="#b83b35"
+                    >
 
-            <label for="hornColor">Horn Color:</label>
-            <input
-                type="color"
-                id="hornColor"
-                value="#b83b35"
-            >
+                    <label for="secondaryColor">Body Secondary:</label>
+                    <input
+                        type="color"
+                        id="secondaryColor"
+                        value="#8f2f2a"
+                    >
+
+                    <label for="limbSecondaryColor">Hands/Feet Secondary:</label>
+                    <input
+                        type="color"
+                        id="limbSecondaryColor"
+                        value="#8f2f2a"
+                    >
+
+                    <label for="clawColor">Claws:</label>
+                    <input
+                        type="color"
+                        id="clawColor"
+                        value="#f2e2c4"
+                    >
+
+                    <label for="hornColor">Horns:</label>
+                    <input
+                        type="color"
+                        id="hornColor"
+                        value="#6b4a32"
+                    >
+
+                    <label for="eyeColor">Eyes:</label>
+                    <input
+                        type="color"
+                        id="eyeColor"
+                        value="#ffffff"
+                    >
+
+                </div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Tail</h2>
+                <div id="tailOptions" class="option-grid"></div>
+                <div id="tailFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Feet</h2>
+                <div id="feetOptions" class="option-grid"></div>
+                <div id="feetFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Body</h2>
+                <div id="bodyOptions" class="option-grid"></div>
+                <div id="bodyFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Hands</h2>
+                <div id="handsOptions" class="option-grid"></div>
+                <div id="handsFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Head</h2>
+                <div id="headOptions" class="option-grid"></div>
+                <div id="headFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Eyes</h2>
+                <div id="eyesOptions" class="option-grid"></div>
+                <div id="eyesFlatToggles" class="flat-toggle-group"></div>
+            </section>
+
+
+            <section class="control-section">
+                <h2>Horns</h2>
+                <div id="hornOptions" class="option-grid"></div>
+                <div id="hornFlatToggles" class="flat-toggle-group"></div>
+            </section>
 
         </div>
 

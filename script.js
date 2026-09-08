@@ -3,38 +3,169 @@ const canvas = document.getElementById("characterCanvas");
 const ctx = canvas.getContext("2d");
 
 // Available character options
-const backgrounds = [
-    "assets/character/backgrounds/Blank.png",
-    "assets/character/backgrounds/Background_1.png",
-    "assets/character/backgrounds/Background_2.png"
-];
+const characterParts = {
+    tail: {
+        folder: "Tail",
+        name: "Tail",
+        count: 2,
+        flats: [1, 2]
+    },
 
-const bodies = [
-    "assets/character/bodies/Body_1.png",
-    "assets/character/bodies/Body_2.png",
-    "assets/character/bodies/Body_3.png"
-];
+    feet: {
+        folder: "Feet",
+        name: "Feet",
+        count: 2,
+        flats: [1, 3, 4]
+    },
 
-const faces = [
-    "assets/character/faces/Face_1.png",
-    "assets/character/faces/Face_2.png"
-];
+    body: {
+        folder: "Body",
+        name: "Body",
+        count: 2,
+        flats: [1, 2]
+    },
 
-const horns = [
-    "assets/character/horns/Horns_1.png",
-    "assets/character/horns/Horns_2.png"
-];
+    hands: {
+        folder: "Hands",
+        name: "Hands",
+        count: 2,
+        flats: [1, 3, 4]
+    },
 
+    head: {
+        folder: "Head",
+        name: "Head",
+        count: 2,
+        flats: [1, 2, 5]
+    },
+
+    eyes: {
+        folder: "Eyes",
+        name: "Eyes",
+        count: 2,
+        flats: [6]
+    },
+
+    horns: {
+        folder: "Horns",
+        name: "Horns",
+        count: 2,
+        flats: [1, 5]
+    }
+};
 
 // Current character selections
 let selectedBackground = 0;
-let selectedBody = 0;
-let selectedFace = 0;
-let selectedHorns = 0;
+const selectedParts = {
+    tail: 0,
+    feet: 0,
+    body: 0,
+    hands: 0,
+    head: 0,
+    eyes: 0,
+    horns: 0
+};
+
+const flatVisibility = {};
+
+for (const partName of Object.keys(characterParts)) {
+
+    flatVisibility[partName] = {};
+
+    for (const flatNumber of characterParts[partName].flats) {
+        flatVisibility[partName][flatNumber] = true;
+    }
+}
+
+
+function getPartPaths(partName, index) {
+
+    const part = characterParts[partName];
+
+    // Files start at 1; JavaScript selections start at 0
+    const fileNumber = index + 1;
+
+    const basePath =
+        `assets/character/${part.folder}/${part.name}${fileNumber}`;
+
+    return {
+        flats: part.flats.map(flatNumber => ({
+            number: flatNumber,
+            path: `${basePath}_Flats${flatNumber}.png`
+        })),
+
+        lines: `${basePath}_Lines.png`
+    };
+}
+
+
+function colorFlat(image, color) {
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Draw the original flat to establish its shape
+    tempCtx.drawImage(image, 0, 0);
+
+    // Only draw the new color where the flat already exists
+    tempCtx.globalCompositeOperation = "source-in";
+
+    tempCtx.fillStyle = color;
+
+    tempCtx.fillRect(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+    );
+
+    // Restore normal drawing behavior
+    tempCtx.globalCompositeOperation = "source-over";
+
+    return tempCanvas;
+}
+
 
 // Current colors
-let selectedBodyColor = "#b83b35";
-let selectedHornColor = "#b83b35";
+const defaultColors = {
+    1: "#b83b35",  // Body Primary
+    2: "#8f2f2a",  // Body Secondary
+    3: "#8f2f2a",  // Hands/Feet Secondary
+    4: "#f2e2c4",  // Claws
+    5: "#6b4a32",  // Horns
+    6: "#ffffff"    // Eyes
+};
+
+const selectedColors = {
+    ...defaultColors
+};
+
+const layerOrder = [
+    "tail",
+    "feet",
+    "body",
+    "hands",
+    "head",
+    "eyes",
+    "horns"
+];
+
+const flatLabels = {
+    1: "Body Primary",
+    2: "Body Secondary",
+    3: "Hands/Feet Secondary",
+    4: "Claws",
+    5: "Horns",
+    6: "Eyes",
+    7: "Scales",
+    8: "Fins",
+    9: "Ears",
+    10: "Wings",
+    11: "Spine"
+};
 
 // Load an image
 const imageCache = new Map();
@@ -51,8 +182,10 @@ function loadImage(path) {
 
         image.onload = () => resolve(image);
 
-        image.onerror = () =>
+        image.onerror = () => {
+            imageCache.delete(path);
             reject(new Error("Could not load " + path));
+        };
 
         image.src = path;
     });
@@ -69,39 +202,101 @@ async function drawCharacter() {
     const thisRender = ++renderVersion;
 
     try {
+
+        // Load background
+        const backgroundPath =
+            `assets/character/Background/Background${selectedBackground + 1}.png`;
+
         const backgroundImage =
-            await loadImage(backgrounds[selectedBackground]);
+            await loadImage(backgroundPath);
 
-        const bodyImage =
-            await loadImage(bodies[selectedBody]);
 
-        const faceImage =
-            await loadImage(faces[selectedFace]);
+        // Load all character layers
+        const loadedParts = {};
 
-        const hornsImage =
-            await loadImage(horns[selectedHorns]);
+        for (const partName of layerOrder) {
 
-        // If another draw started while these were loading,
-        // abandon this outdated draw.
+            const paths = getPartPaths(
+                partName,
+                selectedParts[partName]
+            );
+
+            loadedParts[partName] = {
+                flats: [],
+                lines: await loadImage(paths.lines)
+            };
+
+            // Load every flat belonging to this part
+            for (const flat of paths.flats) {
+
+                loadedParts[partName].flats.push({
+                    number: flat.number,
+                    image: await loadImage(flat.path)
+                });
+            }
+        }
+
+
+        // Stop if a newer render started while loading
         if (thisRender !== renderVersion) {
             return;
         }
 
-        const coloredBody =
-            recolorImage(bodyImage, selectedBodyColor);
 
-        const coloredHorns =
-            recolorImage(hornsImage, selectedHornColor);
+        // Clear canvas
+        ctx.clearRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Draw background first
         ctx.drawImage(backgroundImage, 0, 0);
-        ctx.drawImage(coloredBody, 0, 0);
-        ctx.drawImage(faceImage, 0, 0);
-        ctx.drawImage(coloredHorns, 0, 0);
+
+
+        // Draw character parts from back to front
+        for (const partName of layerOrder) {
+
+            const part = loadedParts[partName];
+
+            // Draw flats from lowest number to highest number
+            const sortedFlats =
+                [...part.flats].sort(
+                    (a, b) => a.number - b.number
+                );
+
+            for (const flat of sortedFlats) {
+
+                // Flats1 is always visible.
+                // Other flats respect their individual toggle.
+                if (
+                    flat.number !== 1 &&
+                    !flatVisibility[partName][flat.number]
+                ) {
+                    continue;
+                }
+
+                const coloredFlat =
+                    colorFlat(
+                        flat.image,
+                        selectedColors[flat.number]
+                    );
+
+                ctx.drawImage(coloredFlat, 0, 0);
+            }
+
+            // Lines always remain visible
+            ctx.drawImage(part.lines, 0, 0);
+        }
 
     } catch (error) {
-        console.error("Could not draw character:", error);
+
+        console.error(
+            "Could not draw character:",
+            error
+        );
     }
 }
 
@@ -114,6 +309,11 @@ function createOptionMenu(
 ) {
 
     const container = document.getElementById(containerId);
+
+    if (!container) {
+        console.error(`Option container not found: ${containerId}`);
+        return;
+    }
 
     options.forEach((imagePath, index) => {
 
@@ -148,7 +348,14 @@ function createOptionMenu(
 function updateSelectedButtons(containerId, selectedIndex) {
 
     const container = document.getElementById(containerId);
-    const buttons = container.querySelectorAll(".option-button");
+
+    if (!container) {
+        console.error(`Option container not found: ${containerId}`);
+        return;
+    }
+
+    const buttons =
+        container.querySelectorAll(".option-button");
 
     buttons.forEach((button, index) => {
 
@@ -157,70 +364,114 @@ function updateSelectedButtons(containerId, selectedIndex) {
         } else {
             button.classList.remove("selected");
         }
-
     });
 }
 
-function selectBackground(index) {
-    selectedBackground = index;
-    drawCharacter();
+function getPreviewPaths(partName) {
+
+    const part = characterParts[partName];
+    const paths = [];
+
+    for (let i = 0; i < part.count; i++) {
+
+        const partPaths =
+            getPartPaths(partName, i);
+
+        paths.push(
+            partPaths.flats[0].path
+        );
+    }
+
+    return paths;
 }
 
-function selectBody(index) {
-    selectedBody = index;
-    drawCharacter();
+const optionContainers = {
+    tail: "tailOptions",
+    feet: "feetOptions",
+    body: "bodyOptions",
+    hands: "handsOptions",
+    head: "headOptions",
+    eyes: "eyesOptions",
+    horns: "hornOptions"
+};
+
+const flatToggleContainers = {
+    tail: "tailFlatToggles",
+    feet: "feetFlatToggles",
+    body: "bodyFlatToggles",
+    hands: "handsFlatToggles",
+    head: "headFlatToggles",
+    eyes: "eyesFlatToggles",
+    horns: "hornFlatToggles"
+};
+
+for (const partName of Object.keys(characterParts)) {
+
+    createOptionMenu(
+        optionContainers[partName],
+        getPreviewPaths(partName),
+
+        index => {
+            selectedParts[partName] = index;
+            drawCharacter();
+        },
+
+        () => selectedParts[partName]
+    );
 }
 
-function selectFace(index) {
-    selectedFace = index;
-    drawCharacter();
-}
+const backgroundCount = 3;
 
-function selectHorns(index) {
-    selectedHorns = index;
-    drawCharacter();
+function getBackgroundPaths() {
+
+    const paths = [];
+
+    for (let i = 1; i <= backgroundCount; i++) {
+        paths.push(
+            `assets/character/Background/Background${i}.png`
+        );
+    }
+
+    return paths;
 }
 
 createOptionMenu(
     "backgroundOptions",
-    backgrounds,
-    selectBackground,
+    getBackgroundPaths(),
+    index => {
+        selectedBackground = index;
+        drawCharacter();
+    },
     () => selectedBackground
 );
 
-createOptionMenu(
-    "bodyOptions",
-    bodies,
-    selectBody,
-    () => selectedBody
-);
+const colorPickers = {
+    1: document.getElementById("primaryColor"),
+    2: document.getElementById("secondaryColor"),
+    3: document.getElementById("limbSecondaryColor"),
+    4: document.getElementById("clawColor"),
+    5: document.getElementById("hornColor"),
+    6: document.getElementById("eyeColor")
+};
 
-createOptionMenu(
-    "faceOptions",
-    faces,
-    selectFace,
-    () => selectedFace
-);
+for (const flatNumber of Object.keys(colorPickers)) {
 
-createOptionMenu(
-    "hornOptions",
-    horns,
-    selectHorns,
-    () => selectedHorns
-);
+    const picker = colorPickers[flatNumber];
 
-const bodyColorPicker = document.getElementById("bodyColor");
-const hornColorPicker = document.getElementById("hornColor");
+    if (!picker) {
+        console.error(
+            `Color picker not found for flat ${flatNumber}`
+        );
+        continue;
+    }
 
-bodyColorPicker.addEventListener("input", () => {
-    selectedBodyColor = bodyColorPicker.value;
-    drawCharacter();
-});
+    picker.addEventListener("input", () => {
 
-hornColorPicker.addEventListener("input", () => {
-    selectedHornColor = hornColorPicker.value;
-    drawCharacter();
-});
+        selectedColors[flatNumber] = picker.value;
+
+        drawCharacter();
+    });
+}
 
 drawCharacter();
 
@@ -242,35 +493,32 @@ document
 
 function randomizeCharacter() {
 
-    // Randomize character parts
     selectedBackground =
-        Math.floor(Math.random() * backgrounds.length);
+        Math.floor(Math.random() * backgroundCount);
 
-    selectedBody =
-        Math.floor(Math.random() * bodies.length);
+    // Randomize all character parts
+    for (const partName of Object.keys(characterParts)) {
 
-    selectedFace =
-        Math.floor(Math.random() * faces.length);
+        selectedParts[partName] =
+            Math.floor(
+                Math.random() *
+                characterParts[partName].count
+            );
+    }
 
-    selectedHorns =
-        Math.floor(Math.random() * horns.length);
+    // Randomize every color channel
+    for (const flatNumber of Object.keys(selectedColors)) {
 
+        selectedColors[flatNumber] =
+            randomColor();
 
-    // Randomize colors
-    selectedBodyColor = randomColor();
-    selectedHornColor = randomColor();
+        if (colorPickers[flatNumber]) {
+            colorPickers[flatNumber].value =
+                selectedColors[flatNumber];
+        }
+    }
 
-
-    // Update the visible color pickers
-    bodyColorPicker.value = selectedBodyColor;
-    hornColorPicker.value = selectedHornColor;
-
-
-    // Update highlighted option buttons
     updateAllSelectedButtons();
-
-
-    // Redraw character
     drawCharacter();
 }
 
@@ -281,93 +529,153 @@ function updateAllSelectedButtons() {
         selectedBackground
     );
 
-    updateSelectedButtons(
-        "bodyOptions",
-        selectedBody
-    );
+    for (const partName of Object.keys(characterParts)) {
 
-    updateSelectedButtons(
-        "faceOptions",
-        selectedFace
-    );
-
-    updateSelectedButtons(
-        "hornOptions",
-        selectedHorns
-    );
+        updateSelectedButtons(
+            optionContainers[partName],
+            selectedParts[partName]
+        );
+    }
 }
 
 document
     .getElementById("clearButton")
     .addEventListener("click", clearCharacter);
 
+
 function clearCharacter() {
 
+    // Reset all selected character parts
+    for (const partName of Object.keys(selectedParts)) {
+        selectedParts[partName] = 0;
+    }
+
+    // Reset background
     selectedBackground = 0;
-    selectedBody = 0;
-    selectedFace = 0;
-    selectedHorns = 0;
 
-    selectedBodyColor = "#b83b35";
-    selectedHornColor = "#b83b35";
+    // Reset all colors
+    for (const flatNumber of Object.keys(defaultColors)) {
 
-    bodyColorPicker.value = selectedBodyColor;
-    hornColorPicker.value = selectedHornColor;
+        selectedColors[flatNumber] =
+            defaultColors[flatNumber];
 
-    updateAllSelectedButtons();
-    drawCharacter();
-}
-
-function recolorImage(image, newColor) {
-
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = image.width;
-    tempCanvas.height = image.height;
-
-    const tempCtx = tempCanvas.getContext("2d");
-
-    tempCtx.drawImage(image, 0, 0);
-
-    const imageData = tempCtx.getImageData(
-        0,
-        0,
-        tempCanvas.width,
-        tempCanvas.height
-    );
-
-    const data = imageData.data;
-
-    // Convert hex color to RGB
-    const rNew = parseInt(newColor.substring(1, 3), 16);
-    const gNew = parseInt(newColor.substring(3, 5), 16);
-    const bNew = parseInt(newColor.substring(5, 7), 16);
-
-    for (let i = 0; i < data.length; i += 4) {
-
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        const a = data[i + 3];
-
-        // Ignore transparent pixels
-        if (a === 0) {
-            continue;
-        }
-
-        // Detect red-ish pixels
-        if (
-            r > 100 &&
-            r > g * 1.5 &&
-            r > b * 1.5
-        ) {
-            data[i] = rNew;
-            data[i + 1] = gNew;
-            data[i + 2] = bNew;
+        if (colorPickers[flatNumber]) {
+            colorPickers[flatNumber].value =
+                selectedColors[flatNumber];
         }
     }
 
-    tempCtx.putImageData(imageData, 0, 0);
+    for (const partName of Object.keys(flatVisibility)) {
 
-    return tempCanvas;
+        for (const flatNumber of Object.keys(
+            flatVisibility[partName]
+        )) {
+
+            flatVisibility[partName][flatNumber] = true;
+        }
+    }
+
+    updateAllSelectedButtons();
+    updateFlatToggleCheckboxes();
+    drawCharacter();
+}
+
+function updateFlatToggleCheckboxes() {
+
+    for (const partName of Object.keys(characterParts)) {
+
+        const container =
+            document.getElementById(
+                flatToggleContainers[partName]
+            );
+
+        if (!container) {
+            continue;
+        }
+
+        const checkboxes =
+            container.querySelectorAll(
+                'input[type="checkbox"]'
+            );
+
+        checkboxes.forEach(checkbox => {
+
+            const flatNumber =
+                Number(checkbox.dataset.flatNumber);
+
+            checkbox.checked =
+                flatVisibility[partName][flatNumber];
+        });
+    }
+}
+
+function createFlatToggles(partName) {
+
+    const containerId =
+        flatToggleContainers[partName];
+
+    const container =
+        document.getElementById(containerId);
+
+    if (!container) {
+        console.error(
+            `Flat toggle container not found: ${containerId}`
+        );
+        return;
+    }
+
+    const part =
+        characterParts[partName];
+
+
+    for (const flatNumber of part.flats) {
+
+        // Flats1 is always visible,
+        // so don't create a toggle for it.
+        if (flatNumber === 1) {
+            continue;
+        }
+
+
+        const label =
+            document.createElement("label");
+
+        label.classList.add("flat-toggle");
+
+
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type = "checkbox";
+        checkbox.checked = true;
+        checkbox.dataset.flatNumber = flatNumber;
+
+        checkbox.addEventListener("change", () => {
+
+            flatVisibility[partName][flatNumber] =
+                checkbox.checked;
+
+            drawCharacter();
+        });
+
+
+        const text =
+            document.createElement("span");
+
+        text.textContent =
+            flatLabels[flatNumber] ??
+            `Flats ${flatNumber}`;
+
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+
+        container.appendChild(label);
+
+    }
+}
+
+for (const partName of Object.keys(characterParts)) {
+    createFlatToggles(partName);
 }
 
