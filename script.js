@@ -42,14 +42,14 @@ const characterParts = {
     eyes: {
         folder: "Eyes",
         name: "Eyes",
-        count: 2,
+        count: 3,
         flats: [6]
     },
 
     horns: {
         folder: "Horns",
         name: "Horns",
-        count: 2,
+        count: 3,
         flats: [1, 5, 8]
     }
 };
