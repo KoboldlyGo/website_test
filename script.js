@@ -8,35 +8,35 @@ const characterParts = {
         folder: "Tail",
         name: "Tail",
         count: 2,
-        flats: [1, 2]
+        flats: [1, 2, 7]
     },
 
     feet: {
         folder: "Feet",
         name: "Feet",
         count: 2,
-        flats: [1, 3, 4]
+        flats: [1, 3, 4, 7]
     },
 
     body: {
         folder: "Body",
         name: "Body",
         count: 2,
-        flats: [1, 2]
+        flats: [1, 2, 7]
     },
 
     hands: {
         folder: "Hands",
         name: "Hands",
         count: 2,
-        flats: [1, 3, 4]
+        flats: [1, 3, 4, 7]
     },
 
     head: {
         folder: "Head",
         name: "Head",
         count: 2,
-        flats: [1, 2, 5]
+        flats: [1, 2, 5, 7]
     },
 
     eyes: {
@@ -50,7 +50,7 @@ const characterParts = {
         folder: "Horns",
         name: "Horns",
         count: 2,
-        flats: [1, 5]
+        flats: [1, 5, 8]
     }
 };
 
@@ -136,7 +136,9 @@ const defaultColors = {
     3: "#8f2f2a",  // Hands/Feet Secondary
     4: "#f2e2c4",  // Claws
     5: "#6b4a32",  // Horns
-    6: "#ffffff"    // Eyes
+    6: "#ffffff",    // Eyes
+    7: "#6b4a32",  // Scales
+    8: "#000000"  // Plates
 };
 
 const selectedColors = {
@@ -161,7 +163,7 @@ const flatLabels = {
     5: "Horns",
     6: "Eyes",
     7: "Scales",
-    8: "Fins",
+    8: "Plates",
     9: "Ears",
     10: "Wings",
     11: "Spine"
@@ -451,7 +453,9 @@ const colorPickers = {
     3: document.getElementById("limbSecondaryColor"),
     4: document.getElementById("clawColor"),
     5: document.getElementById("hornColor"),
-    6: document.getElementById("eyeColor")
+    6: document.getElementById("eyeColor"),
+    7: document.getElementById("scaleColor"),
+    8: document.getElementById("plateColor")
 };
 
 for (const flatNumber of Object.keys(colorPickers)) {
