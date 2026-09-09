@@ -132,13 +132,13 @@ function colorFlat(image, color) {
 // Current colors
 const defaultColors = {
     1: "#b83b35",  // Body Primary
-    2: "#8f2f2a",  // Body Secondary
-    3: "#8f2f2a",  // Hands/Feet Secondary
-    4: "#f2e2c4",  // Claws
-    5: "#6b4a32",  // Horns
-    6: "#ffffff",    // Eyes
-    7: "#6b4a32",  // Scales
-    8: "#000000"  // Plates
+    2: "#da8f8b",  // Body Secondary
+    3: "#da8f8b",  // Hands/Feet Secondary
+    4: "#fff1d6",  // Claws
+    5: "#e2a87e",  // Horns
+    6: "#d6d251",    // Eyes
+    7: "#751a1a",  // Scales
+    8: "#282624"  // Plates
 };
 
 const selectedColors = {
