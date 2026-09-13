@@ -21,7 +21,7 @@ const characterParts = {
     body: {
         folder: "Body",
         name: "Body",
-        count: 2,
+        count: 7,
         flats: [1, 2, 7]
     },
 
@@ -43,7 +43,7 @@ const characterParts = {
         folder: "Eyes",
         name: "Eyes",
         count: 3,
-        flats: [6]
+        flats: [2, 6]
     },
 
     horns: {
