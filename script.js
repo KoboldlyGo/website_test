@@ -32,17 +32,31 @@ const characterParts = {
         flats: [1, 3, 4, 7]
     },
 
-    head: {
-        folder: "Head",
-        name: "Head",
-        count: 2,
-        flats: [1, 2, 5, 7]
+    muzzle: {
+        folder: "Muzzle",
+        name: "Muzzle",
+        count: 3,
+        flats: [1, 2, 7]
+    },
+
+    brow: {
+        folder: "Brows",
+        name: "Brow",
+        count: 5,
+        flats: [1, 7]
+    },
+
+    side: {
+        folder: "Side",
+        name: "Side",
+        count: 5,
+        flats: [1, 5, 11]
     },
 
     eyes: {
         folder: "Eyes",
         name: "Eyes",
-        count: 3,
+        count: 5,
         flats: [2, 6]
     },
 
@@ -61,6 +75,9 @@ const selectedParts = {
     feet: 0,
     body: 0,
     hands: 0,
+    muzzle: 0,
+    brow: 0,
+    side: 0,
     head: 0,
     eyes: 0,
     horns: 0
@@ -78,15 +95,22 @@ for (const partName of Object.keys(characterParts)) {
 }
 
 
-function getPartPaths(partName, index) {
+function getPartPaths(partName, index, splitLayer = null) {
 
     const part = characterParts[partName];
 
     // Files start at 1; JavaScript selections start at 0
     const fileNumber = index + 1;
 
-    const basePath =
+    let basePath =
         `assets/character/${part.folder}/${part.name}${fileNumber}`;
+
+    // Split parts such as Horns use:
+    // Horns1_Top_Flats1.png
+    // Horns1_Bottom_Flats1.png
+    if (splitLayer !== null) {
+        basePath += `_${splitLayer}`;
+    }
 
     return {
         flats: part.flats.map(flatNumber => ({
@@ -136,9 +160,12 @@ const defaultColors = {
     3: "#da8f8b",  // Hands/Feet Secondary
     4: "#fff1d6",  // Claws
     5: "#e2a87e",  // Horns
-    6: "#d6d251",    // Eyes
+    6: "#d6d251",  // Eyes
     7: "#751a1a",  // Scales
-    8: "#282624"  // Plates
+    8: "#282624",  // Plates
+    9: "#751a1a",  // Brow
+    10: "#751a1a", // Fins
+    11: "#b83b35"  // Ears
 };
 
 const selectedColors = {
@@ -146,13 +173,20 @@ const selectedColors = {
 };
 
 const layerOrder = [
-    "tail",
-    "feet",
-    "body",
-    "hands",
-    "head",
-    "eyes",
-    "horns"
+    { part: "tail" },
+    { part: "feet" },
+    { part: "body" },
+    { part: "hands" },
+
+    { part: "horns", splitLayer: "Bottom" },
+
+    { part: "muzzle" },
+    { part: "brow" },
+    { part: "eyes" },
+
+    { part: "horns", splitLayer: "Top" },
+
+    { part: "side" }
 ];
 
 const flatLabels = {
@@ -164,9 +198,9 @@ const flatLabels = {
     6: "Eyes",
     7: "Scales",
     8: "Plates",
-    9: "Ears",
-    10: "Wings",
-    11: "Spine"
+    9: "Brow",
+    10: "Fins",
+    11: "Ears"
 };
 
 // Load an image
@@ -214,28 +248,35 @@ async function drawCharacter() {
 
 
         // Load all character layers
-        const loadedParts = {};
+        const loadedLayers = [];
 
-        for (const partName of layerOrder) {
+        for (const layer of layerOrder) {
+
+            const partName = layer.part;
+            const splitLayer = layer.splitLayer ?? null;
 
             const paths = getPartPaths(
                 partName,
-                selectedParts[partName]
+                selectedParts[partName],
+                splitLayer
             );
 
-            loadedParts[partName] = {
+            const loadedLayer = {
+                partName: partName,
+                splitLayer: splitLayer,
                 flats: [],
                 lines: await loadImage(paths.lines)
             };
 
-            // Load every flat belonging to this part
             for (const flat of paths.flats) {
 
-                loadedParts[partName].flats.push({
+                loadedLayer.flats.push({
                     number: flat.number,
                     image: await loadImage(flat.path)
                 });
             }
+
+            loadedLayers.push(loadedLayer);
         }
 
 
@@ -258,14 +299,15 @@ async function drawCharacter() {
         ctx.drawImage(backgroundImage, 0, 0);
 
 
-        // Draw character parts from back to front
-        for (const partName of layerOrder) {
+        // Draw character layers from back to front
+        for (const layer of loadedLayers) {
 
-            const part = loadedParts[partName];
+            const partName = layer.partName;
 
-            // Draw flats from lowest number to highest number
+            // Lowest-numbered flat is drawn first.
+            // Higher flat numbers therefore appear on top.
             const sortedFlats =
-                [...part.flats].sort(
+                [...layer.flats].sort(
                     (a, b) => a.number - b.number
                 );
 
@@ -289,8 +331,8 @@ async function drawCharacter() {
                 ctx.drawImage(coloredFlat, 0, 0);
             }
 
-            // Lines always remain visible
-            ctx.drawImage(part.lines, 0, 0);
+            // Linework goes above all flats for this layer
+            ctx.drawImage(layer.lines, 0, 0);
         }
 
     } catch (error) {
@@ -376,8 +418,24 @@ function getPreviewPaths(partName) {
 
     for (let i = 0; i < part.count; i++) {
 
-        const partPaths =
-            getPartPaths(partName, i);
+        let partPaths;
+
+        if (part.splitLayers) {
+
+            // Use the Top layer as the menu thumbnail
+            partPaths = getPartPaths(
+                partName,
+                i,
+                "Top"
+            );
+
+        } else {
+
+            partPaths = getPartPaths(
+                partName,
+                i
+            );
+        }
 
         paths.push(
             partPaths.flats[0].path
@@ -392,7 +450,9 @@ const optionContainers = {
     feet: "feetOptions",
     body: "bodyOptions",
     hands: "handsOptions",
-    head: "headOptions",
+    muzzle: "muzzleOptions",
+    brow: "browOptions",
+    side: "sideOptions",
     eyes: "eyesOptions",
     horns: "hornOptions"
 };
@@ -402,7 +462,9 @@ const flatToggleContainers = {
     feet: "feetFlatToggles",
     body: "bodyFlatToggles",
     hands: "handsFlatToggles",
-    head: "headFlatToggles",
+    muzzle: "muzzleFlatToggles",
+    brow: "browFlatToggles",
+    side: "sideFlatToggles",
     eyes: "eyesFlatToggles",
     horns: "hornFlatToggles"
 };
@@ -455,7 +517,10 @@ const colorPickers = {
     5: document.getElementById("hornColor"),
     6: document.getElementById("eyeColor"),
     7: document.getElementById("scaleColor"),
-    8: document.getElementById("plateColor")
+    8: document.getElementById("plateColor"),
+    9: document.getElementById("browColor"),
+    10: document.getElementById("finColor"),
+    11: document.getElementById("earColor")
 };
 
 for (const flatNumber of Object.keys(colorPickers)) {
