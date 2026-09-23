@@ -1,6 +1,28 @@
+/* =========================================================
+   1. DOM REFERENCES
+========================================================= */
+
 // Get the canvas and its drawing context
 const canvas = document.getElementById("characterCanvas");
 const ctx = canvas.getContext("2d");
+
+const colorPickers = {
+    1: document.getElementById("primaryColor"),
+    2: document.getElementById("secondaryColor"),
+    3: document.getElementById("limbSecondaryColor"),
+    4: document.getElementById("clawColor"),
+    5: document.getElementById("hornColor"),
+    6: document.getElementById("eyeColor"),
+    7: document.getElementById("scaleColor"),
+    8: document.getElementById("plateColor"),
+    9: document.getElementById("browColor"),
+    10: document.getElementById("finColor"),
+    11: document.getElementById("earColor")
+};
+
+/* =========================================================
+   2. CHARACTER CONFIGURATION
+========================================================= */
 
 // Available character options
 const characterParts = {
@@ -43,7 +65,7 @@ const characterParts = {
         folder: "Brows",
         name: "Brow",
         count: 5,
-        flats: [1, 7]
+        flats: [1, 9]
     },
 
     side: {
@@ -64,114 +86,12 @@ const characterParts = {
         folder: "Horns",
         name: "Horns",
         count: 3,
-        flats: [1, 5, 8]
+        flats: [1, 5, 8],
+        splitLayers: ["Bottom", "Top"]
     }
 };
 
-// Current character selections
-let selectedBackground = 0;
-const selectedParts = {
-    tail: 0,
-    feet: 0,
-    body: 0,
-    hands: 0,
-    muzzle: 0,
-    brow: 0,
-    side: 0,
-    head: 0,
-    eyes: 0,
-    horns: 0
-};
-
-const flatVisibility = {};
-
-for (const partName of Object.keys(characterParts)) {
-
-    flatVisibility[partName] = {};
-
-    for (const flatNumber of characterParts[partName].flats) {
-        flatVisibility[partName][flatNumber] = true;
-    }
-}
-
-
-function getPartPaths(partName, index, splitLayer = null) {
-
-    const part = characterParts[partName];
-
-    // Files start at 1; JavaScript selections start at 0
-    const fileNumber = index + 1;
-
-    let basePath =
-        `assets/character/${part.folder}/${part.name}${fileNumber}`;
-
-    // Split parts such as Horns use:
-    // Horns1_Top_Flats1.png
-    // Horns1_Bottom_Flats1.png
-    if (splitLayer !== null) {
-        basePath += `_${splitLayer}`;
-    }
-
-    return {
-        flats: part.flats.map(flatNumber => ({
-            number: flatNumber,
-            path: `${basePath}_Flats${flatNumber}.png`
-        })),
-
-        lines: `${basePath}_Lines.png`
-    };
-}
-
-
-function colorFlat(image, color) {
-
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = image.width;
-    tempCanvas.height = image.height;
-
-    const tempCtx = tempCanvas.getContext("2d");
-
-    // Draw the original flat to establish its shape
-    tempCtx.drawImage(image, 0, 0);
-
-    // Only draw the new color where the flat already exists
-    tempCtx.globalCompositeOperation = "source-in";
-
-    tempCtx.fillStyle = color;
-
-    tempCtx.fillRect(
-        0,
-        0,
-        tempCanvas.width,
-        tempCanvas.height
-    );
-
-    // Restore normal drawing behavior
-    tempCtx.globalCompositeOperation = "source-over";
-
-    return tempCanvas;
-}
-
-
-// Current colors
-const defaultColors = {
-    1: "#b83b35",  // Body Primary
-    2: "#da8f8b",  // Body Secondary
-    3: "#da8f8b",  // Hands/Feet Secondary
-    4: "#fff1d6",  // Claws
-    5: "#e2a87e",  // Horns
-    6: "#d6d251",  // Eyes
-    7: "#751a1a",  // Scales
-    8: "#282624",  // Plates
-    9: "#751a1a",  // Brow
-    10: "#751a1a", // Fins
-    11: "#b83b35"  // Ears
-};
-
-const selectedColors = {
-    ...defaultColors
-};
-
+// Define layer order bottom to top for rendering
 const layerOrder = [
     { part: "tail" },
     { part: "feet" },
@@ -203,6 +123,96 @@ const flatLabels = {
     11: "Ears"
 };
 
+const partLabelElements = {
+    tail: "tailLabel",
+    feet: "feetLabel",
+    body: "bodyLabel",
+    hands: "handsLabel",
+    muzzle: "muzzleLabel",
+    brow: "browLabel",
+    side: "sideLabel",
+    eyes: "eyesLabel",
+    horns: "hornsLabel"
+};
+
+const optionContainers = {
+    tail: "tailOptions",
+    feet: "feetOptions",
+    body: "bodyOptions",
+    hands: "handsOptions",
+    muzzle: "muzzleOptions",
+    brow: "browOptions",
+    side: "sideOptions",
+    eyes: "eyesOptions",
+    horns: "hornOptions"
+};
+
+const flatToggleContainers = {
+    tail: "tailFlatToggles",
+    feet: "feetFlatToggles",
+    body: "bodyFlatToggles",
+    hands: "handsFlatToggles",
+    muzzle: "muzzleFlatToggles",
+    brow: "browFlatToggles",
+    side: "sideFlatToggles",
+    eyes: "eyesFlatToggles",
+    horns: "hornFlatToggles"
+};
+
+const backgroundCount = 4;
+
+/* =========================================================
+   3. Default Selections
+========================================================= */
+
+// Current character selections
+let selectedBackground = 0;
+
+const selectedParts = {
+    tail: 0,
+    feet: 0,
+    body: 0,
+    hands: 0,
+    muzzle: 0,
+    brow: 0,
+    side: 0,
+    eyes: 0,
+    horns: 0
+};
+
+// Current colors
+const defaultColors = {
+    1: "#b83b35",  // Body Primary
+    2: "#da8f8b",  // Body Secondary
+    3: "#da8f8b",  // Hands/Feet Secondary
+    4: "#fff1d6",  // Claws
+    5: "#e2a87e",  // Horns
+    6: "#d6d251",  // Eyes
+    7: "#751a1a",  // Scales
+    8: "#282624",  // Plates
+    9: "#751a1a",  // Brow
+    10: "#751a1a", // Fins
+    11: "#da8f8b"  // Ears
+};
+
+const selectedColors = {
+    ...defaultColors
+};
+
+/* =========================================================
+   4. APPLICATION STATE
+========================================================= */
+
+const flatVisibility = {};
+
+const partNames = {};
+
+let renderVersion = 0;
+
+/* =========================================================
+   5. ASSET / DATA LOADING UTILITIES
+========================================================= */
+
 // Load an image
 const imageCache = new Map();
 
@@ -231,7 +241,180 @@ function loadImage(path) {
     return promise;
 }
 
-let renderVersion = 0;
+
+async function loadPartNames() {
+
+    try {
+
+        const response =
+            await fetch("assets/character/PartNames.csv");
+
+        if (!response.ok) {
+            throw new Error(
+                `Could not load PartNames.csv: ${response.status}`
+            );
+        }
+
+        const csvText = await response.text();
+
+        const lines =
+            csvText
+                .trim()
+                .split(/\r?\n/);
+
+        // Skip the header row
+        for (let i = 1; i < lines.length; i++) {
+
+            const line = lines[i];
+
+            // Split only on the first comma
+            const commaIndex = line.indexOf(",");
+
+            if (commaIndex === -1) {
+                continue;
+            }
+
+            const part =
+                line
+                    .slice(0, commaIndex)
+                    .trim();
+
+            const name =
+                line
+                    .slice(commaIndex + 1)
+                    .trim();
+
+            partNames[part] = name;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Could not load part names:",
+            error
+        );
+    }
+}
+
+
+function getPartPaths(partName, index, splitLayer = null) {
+
+    const part = characterParts[partName];
+
+    // Files start at 1; JavaScript selections start at 0
+    const fileNumber = index + 1;
+
+    let basePath =
+        `assets/character/${part.folder}/${part.name}${fileNumber}`;
+
+    // Split parts such as Horns use:
+    // Horns1_Top_Flats1.png
+    // Horns1_Bottom_Flats1.png
+    if (splitLayer !== null) {
+        basePath += `_${splitLayer}`;
+    }
+
+    return {
+        flats: part.flats.map(flatNumber => ({
+            number: flatNumber,
+            path: `${basePath}_Flats${flatNumber}.png`
+        })),
+
+        lines: `${basePath}_Lines.png`
+    };
+}
+
+function getPreviewPaths(partName) {
+
+    const part = characterParts[partName];
+    const previews = [];
+
+    for (let i = 0; i < part.count; i++) {
+
+        const fileNumber = i + 1;
+
+        // Preferred custom thumbnail
+        const thumbnailPath =
+            `assets/character/Thumbnails/${part.name}${fileNumber}.png`;
+
+        let partPaths;
+
+        if (part.splitLayers) {
+
+            // Horns are split into Top and Bottom.
+            // Use the Top flat as the fallback preview.
+            partPaths = getPartPaths(
+                partName,
+                i,
+                "Top"
+            );
+
+        } else {
+
+            partPaths = getPartPaths(
+                partName,
+                i
+            );
+        }
+
+        // Existing first flat becomes the fallback
+        const fallbackPath =
+            partPaths.flats[0].path;
+
+        previews.push({
+            thumbnail: thumbnailPath,
+            fallback: fallbackPath
+        });
+    }
+
+    return previews;
+}
+
+function getBackgroundPaths() {
+
+    const paths = [];
+
+    for (let i = 1; i <= backgroundCount; i++) {
+        paths.push(
+            `assets/character/Background/Background${i}.png`
+        );
+    }
+
+    return paths;
+}
+
+/* =========================================================
+   6. IMAGE / RENDERING UTILITIES
+========================================================= */
+
+function colorFlat(image, color) {
+
+    const tempCanvas = document.createElement("canvas");
+    tempCanvas.width = image.width;
+    tempCanvas.height = image.height;
+
+    const tempCtx = tempCanvas.getContext("2d");
+
+    // Draw the original flat to establish its shape
+    tempCtx.drawImage(image, 0, 0);
+
+    // Only draw the new color where the flat already exists
+    tempCtx.globalCompositeOperation = "source-in";
+
+    tempCtx.fillStyle = color;
+
+    tempCtx.fillRect(
+        0,
+        0,
+        tempCanvas.width,
+        tempCanvas.height
+    );
+
+    // Restore normal drawing behavior
+    tempCtx.globalCompositeOperation = "source-over";
+
+    return tempCanvas;
+}
 
 async function drawCharacter() {
 
@@ -344,49 +527,53 @@ async function drawCharacter() {
     }
 }
 
+/* =========================================================
+   7. UI UPDATE FUNCTIONS
+========================================================= */
 
-function createOptionMenu(
-    containerId,
-    options,
-    selectFunction,
-    getSelectedIndex
-) {
+function updatePartLabel(partName) {
 
-    const container = document.getElementById(containerId);
+    const headingId =
+        partLabelElements[partName];
 
-    if (!container) {
-        console.error(`Option container not found: ${containerId}`);
+    const heading =
+        document.getElementById(headingId);
+
+    if (!heading) {
         return;
     }
 
-    options.forEach((imagePath, index) => {
+    const selectionName =
+        heading.querySelector(".part-selection-name");
 
-        const button = document.createElement("button");
-        button.classList.add("option-button");
+    if (!selectionName) {
+        return;
+    }
 
-        const image = document.createElement("img");
-        image.src = imagePath;
+    const part =
+        characterParts[partName];
 
-        button.appendChild(image);
+    const fileNumber =
+        selectedParts[partName] + 1;
 
-        button.addEventListener("click", () => {
+    const lookupKey =
+        `${part.name}${fileNumber}`;
 
-            selectFunction(index);
+    const customName =
+        partNames[lookupKey];
 
-            updateSelectedButtons(
-                containerId,
-                getSelectedIndex()
-            );
-        });
+    if (customName) {
+        selectionName.textContent = customName;
+    } else {
+        selectionName.textContent = "";
+    }
+}
 
-        container.appendChild(button);
-    });
+function updateAllPartLabels() {
 
-    // Highlight the initially selected option
-    updateSelectedButtons(
-        containerId,
-        getSelectedIndex()
-    );
+    for (const partName of Object.keys(characterParts)) {
+        updatePartLabel(partName);
+    }
 }
 
 function updateSelectedButtons(containerId, selectedIndex) {
@@ -411,186 +598,6 @@ function updateSelectedButtons(containerId, selectedIndex) {
     });
 }
 
-function getPreviewPaths(partName) {
-
-    const part = characterParts[partName];
-    const paths = [];
-
-    for (let i = 0; i < part.count; i++) {
-
-        let partPaths;
-
-        if (part.splitLayers) {
-
-            // Use the Top layer as the menu thumbnail
-            partPaths = getPartPaths(
-                partName,
-                i,
-                "Top"
-            );
-
-        } else {
-
-            partPaths = getPartPaths(
-                partName,
-                i
-            );
-        }
-
-        paths.push(
-            partPaths.flats[0].path
-        );
-    }
-
-    return paths;
-}
-
-const optionContainers = {
-    tail: "tailOptions",
-    feet: "feetOptions",
-    body: "bodyOptions",
-    hands: "handsOptions",
-    muzzle: "muzzleOptions",
-    brow: "browOptions",
-    side: "sideOptions",
-    eyes: "eyesOptions",
-    horns: "hornOptions"
-};
-
-const flatToggleContainers = {
-    tail: "tailFlatToggles",
-    feet: "feetFlatToggles",
-    body: "bodyFlatToggles",
-    hands: "handsFlatToggles",
-    muzzle: "muzzleFlatToggles",
-    brow: "browFlatToggles",
-    side: "sideFlatToggles",
-    eyes: "eyesFlatToggles",
-    horns: "hornFlatToggles"
-};
-
-for (const partName of Object.keys(characterParts)) {
-
-    createOptionMenu(
-        optionContainers[partName],
-        getPreviewPaths(partName),
-
-        index => {
-            selectedParts[partName] = index;
-            drawCharacter();
-        },
-
-        () => selectedParts[partName]
-    );
-}
-
-const backgroundCount = 3;
-
-function getBackgroundPaths() {
-
-    const paths = [];
-
-    for (let i = 1; i <= backgroundCount; i++) {
-        paths.push(
-            `assets/character/Background/Background${i}.png`
-        );
-    }
-
-    return paths;
-}
-
-createOptionMenu(
-    "backgroundOptions",
-    getBackgroundPaths(),
-    index => {
-        selectedBackground = index;
-        drawCharacter();
-    },
-    () => selectedBackground
-);
-
-const colorPickers = {
-    1: document.getElementById("primaryColor"),
-    2: document.getElementById("secondaryColor"),
-    3: document.getElementById("limbSecondaryColor"),
-    4: document.getElementById("clawColor"),
-    5: document.getElementById("hornColor"),
-    6: document.getElementById("eyeColor"),
-    7: document.getElementById("scaleColor"),
-    8: document.getElementById("plateColor"),
-    9: document.getElementById("browColor"),
-    10: document.getElementById("finColor"),
-    11: document.getElementById("earColor")
-};
-
-for (const flatNumber of Object.keys(colorPickers)) {
-
-    const picker = colorPickers[flatNumber];
-
-    if (!picker) {
-        console.error(
-            `Color picker not found for flat ${flatNumber}`
-        );
-        continue;
-    }
-
-    picker.addEventListener("input", () => {
-
-        selectedColors[flatNumber] = picker.value;
-
-        drawCharacter();
-    });
-}
-
-drawCharacter();
-
-function randomColor() {
-    const r = Math.floor(Math.random() * 256);
-    const g = Math.floor(Math.random() * 256);
-    const b = Math.floor(Math.random() * 256);
-
-    return "#" +
-        r.toString(16).padStart(2, "0") +
-        g.toString(16).padStart(2, "0") +
-        b.toString(16).padStart(2, "0");
-}
-
-document
-    .getElementById("randomizeButton")
-    .addEventListener("click", randomizeCharacter);
-
-
-function randomizeCharacter() {
-
-    selectedBackground =
-        Math.floor(Math.random() * backgroundCount);
-
-    // Randomize all character parts
-    for (const partName of Object.keys(characterParts)) {
-
-        selectedParts[partName] =
-            Math.floor(
-                Math.random() *
-                characterParts[partName].count
-            );
-    }
-
-    // Randomize every color channel
-    for (const flatNumber of Object.keys(selectedColors)) {
-
-        selectedColors[flatNumber] =
-            randomColor();
-
-        if (colorPickers[flatNumber]) {
-            colorPickers[flatNumber].value =
-                selectedColors[flatNumber];
-        }
-    }
-
-    updateAllSelectedButtons();
-    drawCharacter();
-}
-
 function updateAllSelectedButtons() {
 
     updateSelectedButtons(
@@ -605,48 +612,6 @@ function updateAllSelectedButtons() {
             selectedParts[partName]
         );
     }
-}
-
-document
-    .getElementById("clearButton")
-    .addEventListener("click", clearCharacter);
-
-
-function clearCharacter() {
-
-    // Reset all selected character parts
-    for (const partName of Object.keys(selectedParts)) {
-        selectedParts[partName] = 0;
-    }
-
-    // Reset background
-    selectedBackground = 0;
-
-    // Reset all colors
-    for (const flatNumber of Object.keys(defaultColors)) {
-
-        selectedColors[flatNumber] =
-            defaultColors[flatNumber];
-
-        if (colorPickers[flatNumber]) {
-            colorPickers[flatNumber].value =
-                selectedColors[flatNumber];
-        }
-    }
-
-    for (const partName of Object.keys(flatVisibility)) {
-
-        for (const flatNumber of Object.keys(
-            flatVisibility[partName]
-        )) {
-
-            flatVisibility[partName][flatNumber] = true;
-        }
-    }
-
-    updateAllSelectedButtons();
-    updateFlatToggleCheckboxes();
-    drawCharacter();
 }
 
 function updateFlatToggleCheckboxes() {
@@ -676,6 +641,80 @@ function updateFlatToggleCheckboxes() {
                 flatVisibility[partName][flatNumber];
         });
     }
+}
+
+/* =========================================================
+   8. UI CREATION FUNCTIONS
+========================================================= */
+
+
+function createOptionMenu(
+    containerId,
+    options,
+    selectFunction,
+    getSelectedIndex
+) {
+
+    const container = document.getElementById(containerId);
+
+    if (!container) {
+        console.error(`Option container not found: ${containerId}`);
+        return;
+    }
+
+    options.forEach((option, index) => {
+
+        const button = document.createElement("button");
+        button.classList.add("option-button");
+
+        const image = document.createElement("img");
+
+        // Character-part options have a custom thumbnail
+        // plus a fallback image.
+        if (
+            typeof option === "object" &&
+            option.thumbnail
+        ) {
+
+            image.src = option.thumbnail;
+
+            // If the thumbnail doesn't exist,
+            // fall back to the original flat preview.
+            image.onerror = () => {
+
+                // Prevent an infinite error loop if
+                // the fallback is also missing.
+                image.onerror = null;
+
+                image.src = option.fallback;
+            };
+
+        } else {
+
+            // Background options are still normal image paths.
+            image.src = option;
+        }
+
+        button.appendChild(image);
+
+        button.addEventListener("click", () => {
+
+            selectFunction(index);
+
+            updateSelectedButtons(
+                containerId,
+                getSelectedIndex()
+            );
+        });
+
+        container.appendChild(button);
+    });
+
+    // Highlight the initially selected option
+    updateSelectedButtons(
+        containerId,
+        getSelectedIndex()
+    );
 }
 
 function createFlatToggles(partName) {
@@ -744,7 +783,217 @@ function createFlatToggles(partName) {
     }
 }
 
-for (const partName of Object.keys(characterParts)) {
-    createFlatToggles(partName);
+
+/* =========================================================
+   9. CHARACTER ACTIONS
+========================================================= */
+
+function randomColor() {
+    const r = Math.floor(Math.random() * 256);
+    const g = Math.floor(Math.random() * 256);
+    const b = Math.floor(Math.random() * 256);
+
+    return "#" +
+        r.toString(16).padStart(2, "0") +
+        g.toString(16).padStart(2, "0") +
+        b.toString(16).padStart(2, "0");
 }
+
+function randomizeCharacter() {
+
+    selectedBackground =
+        Math.floor(Math.random() * backgroundCount);
+
+    // Randomize all character parts
+    for (const partName of Object.keys(characterParts)) {
+
+        selectedParts[partName] =
+            Math.floor(
+                Math.random() *
+                characterParts[partName].count
+            );
+    }
+
+    // Randomize every color channel
+    for (const flatNumber of Object.keys(selectedColors)) {
+
+        selectedColors[flatNumber] =
+            randomColor();
+
+        if (colorPickers[flatNumber]) {
+            colorPickers[flatNumber].value =
+                selectedColors[flatNumber];
+        }
+    }
+
+    updateAllSelectedButtons();
+    updateAllPartLabels();
+    drawCharacter();
+}
+
+function clearCharacter() {
+
+    // Reset all selected character parts
+    for (const partName of Object.keys(selectedParts)) {
+        selectedParts[partName] = 0;
+    }
+
+    // Reset background
+    selectedBackground = 0;
+
+    // Reset all colors
+    for (const flatNumber of Object.keys(defaultColors)) {
+
+        selectedColors[flatNumber] =
+            defaultColors[flatNumber];
+
+        if (colorPickers[flatNumber]) {
+            colorPickers[flatNumber].value =
+                selectedColors[flatNumber];
+        }
+    }
+
+    for (const partName of Object.keys(flatVisibility)) {
+
+        for (const flatNumber of Object.keys(
+            flatVisibility[partName]
+        )) {
+
+            flatVisibility[partName][flatNumber] = true;
+        }
+    }
+
+    updateAllSelectedButtons();
+    updateAllPartLabels();
+    updateFlatToggleCheckboxes();
+    drawCharacter();
+}
+
+/* =========================================================
+   10. INITIALIZATION / SETUP
+========================================================= */
+
+function initializeFlatVisibility() {
+
+    for (const partName of Object.keys(characterParts)) {
+
+        flatVisibility[partName] = {};
+
+        for (const flatNumber of characterParts[partName].flats) {
+            flatVisibility[partName][flatNumber] = true;
+        }
+    }
+}
+
+
+function initializeOptionMenus() {
+
+    for (const partName of Object.keys(characterParts)) {
+
+        createOptionMenu(
+            optionContainers[partName],
+            getPreviewPaths(partName),
+
+            index => {
+                selectedParts[partName] = index;
+
+                updatePartLabel(partName);
+                drawCharacter();
+            },
+
+            () => selectedParts[partName]
+        );
+    }
+
+    createOptionMenu(
+        "backgroundOptions",
+        getBackgroundPaths(),
+
+        index => {
+            selectedBackground = index;
+            drawCharacter();
+        },
+
+        () => selectedBackground
+    );
+}
+
+
+function initializeColorPickers() {
+
+    for (const flatNumber of Object.keys(defaultColors)) {
+
+        if (colorPickers[flatNumber]) {
+            colorPickers[flatNumber].value =
+                defaultColors[flatNumber];
+        }
+    }
+
+    for (const flatNumber of Object.keys(colorPickers)) {
+
+        const picker = colorPickers[flatNumber];
+
+        if (!picker) {
+            console.error(
+                `Color picker not found for flat ${flatNumber}`
+            );
+
+            continue;
+        }
+
+        picker.addEventListener("input", () => {
+
+            selectedColors[flatNumber] = picker.value;
+
+            drawCharacter();
+        });
+    }
+}
+
+
+function initializeFlatToggles() {
+
+    for (const partName of Object.keys(characterParts)) {
+        createFlatToggles(partName);
+    }
+}
+
+
+function initializeEventListeners() {
+
+    document
+        .getElementById("randomizeButton")
+        .addEventListener("click", randomizeCharacter);
+
+    document
+        .getElementById("clearButton")
+        .addEventListener("click", clearCharacter);
+}
+
+async function initializeCharacterCreator() {
+
+    initializeFlatVisibility();
+    initializeOptionMenus();
+    initializeColorPickers();
+    initializeFlatToggles();
+    initializeEventListeners();
+
+    await loadPartNames();
+
+    updateAllPartLabels();
+
+    drawCharacter();
+}
+
+
+/* =========================================================
+   11. START APPLICATION
+========================================================= */
+
+
+initializeCharacterCreator();
+
+
+
+
 
